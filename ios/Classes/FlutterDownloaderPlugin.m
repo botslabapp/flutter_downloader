@@ -46,6 +46,8 @@
 }
 
 @property(nonatomic, strong) dispatch_queue_t databaseQueue;
+@property(nonatomic, assign) BOOL destroyFlag;
+
 
 @end
 
@@ -75,8 +77,8 @@ static BOOL debug = YES;
         _eventQueue = [[NSMutableArray alloc] init];
 
         NSBundle *frameworkBundle = [NSBundle bundleForClass:FlutterDownloaderPlugin.class];
-
-        // initialize Database
+//
+//        // initialize Database
         NSURL *bundleUrl = [[frameworkBundle resourceURL] URLByAppendingPathComponent:@"FlutterDownloaderDatabase.bundle"];
         NSBundle *resourceBundle = [NSBundle bundleWithURL:bundleUrl];
         NSString *dbPath = [resourceBundle pathForResource:@"download_tasks" ofType:@"sql"];
@@ -99,6 +101,7 @@ static BOOL debug = YES;
         NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:[NSString stringWithFormat:@"%@.download.background.%f", NSBundle.mainBundle.bundleIdentifier, [[NSDate date] timeIntervalSince1970]]];
         sessionConfiguration.HTTPMaximumConnectionsPerHost = [maxConcurrentTasks intValue];
         _session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:nil];
+        
         if (debug) {
             NSLog(@"init NSURLSession with id: %@", [[_session configuration] identifier]);
         }
@@ -787,9 +790,35 @@ static BOOL debug = YES;
 # pragma mark - FlutterPlugin
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-    [registrar addApplicationDelegate: [[FlutterDownloaderPlugin alloc] init:registrar]];
+    FlutterDownloaderPlugin *instance = [[FlutterDownloaderPlugin alloc] init:registrar];
+    [registrar addApplicationDelegate: instance];
+    [registrar publish:instance];
 }
 
+- (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
+    if (debug) {
+        NSLog(@"detachFromEngineForRegistrar:");
+    }
+    for (NSString* key in _runningTaskById) {
+        if ([_runningTaskById[key][KEY_STATUS] intValue] < STATUS_COMPLETE) {
+            [self updateTask:key status:STATUS_CANCELED progress:-1];
+        }
+    }
+    _destroyFlag = YES;
+    [self cancelAllTasks];
+    [_session invalidateAndCancel];
+    _session = nil;
+    _mainChannel = nil;
+    _dbManager = nil;
+    databaseQueue = nil;
+    _runningTaskById = nil;
+    [_headlessRunner destroyContext];
+}
+
+- (void)dealloc {
+    NSLog(@"FlutterDownloaderPlugin dealloc");
+}
+        
 + (void)setPluginRegistrantCallback:(FlutterPluginRegistrantCallback)callback {
   registerPlugins = callback;
 }
@@ -850,7 +879,12 @@ static BOOL debug = YES;
 }
 
 # pragma mark - NSURLSessionTaskDelegate
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+
+- (void)URLSession:(NSURLSession *)session
+      downloadTask:(NSURLSessionDownloadTask *)downloadTask
+      didWriteData:(int64_t)bytesWritten
+ totalBytesWritten:(int64_t)totalBytesWritten
+totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
 {
     if (totalBytesExpectedToWrite == NSURLSessionTransferSizeUnknown) {
         if (debug) {
@@ -904,10 +938,13 @@ static BOOL debug = YES;
         if (debug) {
             NSLog(@"Unable to copy temp file. Error: %@", [error localizedDescription]);
         }
-        [self sendUpdateProgressForTaskId:taskId inStatus:@(STATUS_FAILED) andProgress:@(-1)];
-        dispatch_sync(databaseQueue, ^{
-            [weakSelf updateTask:taskId status:STATUS_FAILED progress:-1];
-        });
+        if (!_destroyFlag) {
+            [self sendUpdateProgressForTaskId:taskId inStatus:@(STATUS_FAILED) andProgress:@(-1)];
+            dispatch_sync(databaseQueue, ^{
+                [weakSelf updateTask:taskId status:STATUS_FAILED progress:-1];
+            });
+        }
+
     }
 }
 
@@ -937,11 +974,14 @@ static BOOL debug = YES;
                 status = STATUS_FAILED;
             }
             [_runningTaskById removeObjectForKey:taskId];
-            [self sendUpdateProgressForTaskId:taskId inStatus:@(status) andProgress:@(-1)];
-            __typeof__(self) __weak weakSelf = self;
-            dispatch_sync(databaseQueue, ^{
-                [weakSelf updateTask:taskId status:status progress:-1];
-            });
+            if (!_destroyFlag) {
+                [self sendUpdateProgressForTaskId:taskId inStatus:@(status) andProgress:@(-1)];
+                __typeof__(self) __weak weakSelf = self;
+                dispatch_sync(databaseQueue, ^{
+                    [weakSelf updateTask:taskId status:status progress:-1];
+                });
+            }
+
         }
     }
 }
