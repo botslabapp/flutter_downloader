@@ -1010,9 +1010,9 @@ totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
                     completionHandler();
 
                     // Show a local notification when all downloads are over.
-                    UILocalNotification *localNotification = [[UILocalNotification alloc] init];
-                    localNotification.alertBody = self->_allFilesDownloadedMsg;
-                    [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
+                  //  UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+                  //  localNotification.alertBody = self->_allFilesDownloadedMsg;
+                  //  [[UIApplication sharedApplication] presentLocalNotificationNow:localNotification];
                 }];
             }
         }
