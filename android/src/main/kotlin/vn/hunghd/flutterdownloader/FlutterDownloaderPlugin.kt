@@ -45,7 +45,9 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
             context = applicationContext
             flutterChannel = MethodChannel(messenger, CHANNEL)
             flutterChannel?.setMethodCallHandler(this)
+            print("TaskDbHelper---onAttachedToEngine---start");
             val dbHelper: TaskDbHelper = TaskDbHelper.getInstance(context)
+            print("TaskDbHelper---onAttachedToEngine---end");
             taskDao = TaskDao(dbHelper)
         }
     }

@@ -8,10 +8,12 @@ import android.provider.BaseColumns
 class TaskDbHelper private constructor(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
+        print("TaskDbHelper---onCreate");
         db.execSQL(SQL_CREATE_ENTRIES)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        print("TaskDbHelper---onUpgrade");
 //        if (newVersion == 4) {
 //            db.execSQL("ALTER TABLE ${TaskEntry.TABLE_NAME} ADD COLUMN ${TaskEntry.COLUMN_ALLOW_CELLULAR} TINYINT DEFAULT 1")
 //        } else if (oldVersion == 2 && newVersion == 3) {
@@ -25,6 +27,7 @@ class TaskDbHelper private constructor(context: Context) :
     }
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        print("TaskDbHelper---onDowngrade");
         onUpgrade(db, oldVersion, newVersion)
     }
 
