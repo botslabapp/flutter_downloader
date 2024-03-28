@@ -50,11 +50,11 @@ class FlutterDownloaderPlugin : MethodChannel.MethodCallHandler, FlutterPlugin {
                 val dbHelper: TaskDbHelper = TaskDbHelper.getInstance(context)
                 val db: SQLiteDatabase = dbHelper.getReadableDatabase()
                 dbHelper.delete(db)
-                println("TaskDbHelper---onAttachedToEngine---end");
-            } catch (e) {
-                println("TaskDbHelper---onAttachedToEngine---error:$e");
+                taskDao = TaskDao(dbHelper)
+                println("TaskDbHelper---onAttachedToEngine---end")
+            } catch (e: Exception) {
+                println("TaskDbHelper---onAttachedToEngine---error:$e")
             }
-            taskDao = TaskDao(dbHelper)
         }
     }
 
