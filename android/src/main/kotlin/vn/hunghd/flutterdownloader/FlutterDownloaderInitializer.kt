@@ -26,11 +26,10 @@ class FlutterDownloaderInitializer : ContentProvider() {
                 context,
                 Configuration.Builder()
                     .setExecutor(Executors.newFixedThreadPool(maximumConcurrentTask))
-                    .build()
+                    .build())
         } catch (e: JSONException) {
             e.printStackTrace()
         }
-        )
         return true
     }
 
