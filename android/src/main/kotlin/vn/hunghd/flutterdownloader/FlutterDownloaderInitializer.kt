@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import java.util.concurrent.Executors
+import java.lang.Exception
 
 class FlutterDownloaderInitializer : ContentProvider() {
     companion object {
@@ -27,7 +28,7 @@ class FlutterDownloaderInitializer : ContentProvider() {
                 Configuration.Builder()
                     .setExecutor(Executors.newFixedThreadPool(maximumConcurrentTask))
                     .build())
-        } catch (e: JSONException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
         return true
