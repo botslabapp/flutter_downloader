@@ -21,11 +21,15 @@ class FlutterDownloaderInitializer : ContentProvider() {
     override fun onCreate(): Boolean {
         val context = requireNotNull(this.context) { "Cannot find context from the provider." }
         val maximumConcurrentTask = getMaxConcurrentTaskMetadata(context)
-        WorkManager.initialize(
-            context,
-            Configuration.Builder()
-                .setExecutor(Executors.newFixedThreadPool(maximumConcurrentTask))
-                .build()
+        try {
+            WorkManager.initialize(
+                context,
+                Configuration.Builder()
+                    .setExecutor(Executors.newFixedThreadPool(maximumConcurrentTask))
+                    .build()
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
         )
         return true
     }
