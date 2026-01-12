@@ -21,7 +21,7 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
         TaskEntry.COLUMN_NAME_SHOW_NOTIFICATION,
         TaskEntry.COLUMN_NAME_TIME_CREATED,
         TaskEntry.COLUMN_SAVE_IN_PUBLIC_STORAGE,
-        TaskEntry.COLUMN_ALLOW_CELLULAR,
+        TaskEntry.COLUMN_ALLOW_CELLULAR
     )
 
     fun insertOrUpdateNewTask(
@@ -93,7 +93,7 @@ class TaskDao(private val dbHelper: TaskDbHelper) {
 
     fun loadTasksWithRawQuery(query: String?): List<DownloadTask> {
         val db = dbHelper.readableDatabase
-        val cursor = db.rawQuery(query!!, null)
+        val cursor = db.rawQuery(query, null)
         val result: MutableList<DownloadTask> = ArrayList()
         while (cursor.moveToNext()) {
             result.add(parseCursor(cursor))
